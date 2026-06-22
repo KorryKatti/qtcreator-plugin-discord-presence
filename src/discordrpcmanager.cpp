@@ -327,12 +327,17 @@ void DiscordRPCManager::syncToEditor()
     if (m_verbOverrides.contains(mime))
         desc.WorkingVerb = m_verbOverrides.value(mime);
 
+    const int minutes = m_timeOnCurrentEditor / 60;
+    const int seconds = m_timeOnCurrentEditor % 60;
+    const QString elapsed = QString("%1:%2")
+        .arg(minutes)
+        .arg(seconds, 2, 10, QChar('0'));
+
     QDiscordRichPresence presence;
     presence.Details = desc.WorkingVerb + " " + desc.Description;
-    presence.State = fileName + "/" + projectName;
+    presence.State = fileName + "/" + projectName + " | " + elapsed;
     presence.LargeImageKey = desc.ImageKey;
     presence.LargeImageText = desc.WorkingVerb + " " + fileName
-                              + " since " + QString::number(m_timeOnCurrentEditor) + "s"
                               + " (" + mime + ")";
     presence.SmallImageKey = "qtcircle";
     presence.SmallImageText = projectName;
