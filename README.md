@@ -28,8 +28,6 @@ main.cpp/MyApp
 
 ## Installation (Pre-built)
 
-Download the latest release for your platform from [Releases](https://github.com/KorryKatti/qtcreator-plugin-discord-presence/releases).
-
 1. Open Qt Creator
 2. Go to **Help** > **About Plugins**
 3. Click **Install Plugin**
@@ -136,10 +134,6 @@ Contributions welcome! Areas for improvement:
 - More file type icons
 - Activity tracking and statistics
 - Localization
-
-## License
-
-MIT
 
 ## References
 

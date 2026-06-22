@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(QTC_ROOT "/usr/include/qtcreator" CACHE PATH "Qt Creator source root")
 set(QTC_LIB_DIR "/usr/lib/qtcreator" CACHE PATH "Qt Creator library directory")
-set(DISCORD_RPC_DIR "/tmp/discord-rpc-install" CACHE PATH "discord-rpc install prefix")
+set(DISCORD_RPC_DIR "" CACHE PATH "discord-rpc install prefix")
 
 find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
 
