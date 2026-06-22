@@ -1,0 +1,19 @@
+{
+    "Id" : "discord-rpc",
+    "Name" : "DiscordRPC",
+    "Version" : "1.0.0",
+    "CompatVersion" : "1.0.0",
+    "Vendor" : "Your Name",
+    "VendorId" : "discordrpc",
+    "Copyright" : "(C) 2024 Your Name",
+    "License" : "MIT",
+    "Description" : "Discord Rich Presence integration for Qt Creator",
+    "Url" : "https://github.com/yourname/qtcreator-discord-rpc",
+    "Category" : "Integration",
+    "Experimental" : false,
+    "Enabled" : true,
+    "Dependencies" : [
+        {"Id" : "Core", "Version" : "19.0"},
+        {"Id" : "ProjectExplorer", "Version" : "19.0"}
+    ]
+}
