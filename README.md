@@ -1,231 +1,149 @@
-# Discord RPC Plugin for Qt Creator 19.0.2
+# Discord RPC Plugin for Qt Creator
 
 A Qt Creator plugin that adds Discord Rich Presence support, showing what you're coding in real-time on your Discord profile.
 
 ## Features
 
-✨ **Live Presence** — Shows current project and file in Discord
-🎨 **File Type Icons** — Different icons for C++, Python, QML, JavaScript, etc.
-⏱️ **Session Timer** — Tracks how long you've been coding
-🔄 **Auto-Update** — Updates every 15 seconds as you work
-🚫 **Lightweight** — Minimal performance impact
+- **Live Presence** — Shows current project and file in Discord
+- **MIME-based Detection** — Recognizes 30+ file types (C++, Python, QML, Rust, Java, etc.)
+- **Control Menu** — Start/Stop Discord RPC from Tools menu
+- **Session Timer** — Tracks time spent on current file
+- **Auto-Update** — Updates every second as you work
+- **File Type Icons** — Different Discord icons per language
 
 ## What It Shows
 
 Your Discord profile will display:
-- **Project Name** — Which Qt project you're working on
-- **Current File** — The file you're editing
-- **File Type** — Language indicator (C++, Python, etc.)
-- **Session Duration** — How long you've been coding
-- **Qt Creator Icon** — Visual indicator you're using Qt Creator
-
-Example:
-```
-Editing: main.cpp
-In Project: MyApp
-with Qt Creator 19.0.2
-```
-
-## Requirements
-
-- **Qt Creator 19.0.2** with development files
-- **Qt 6.11.1** (or compatible Qt 6.x)
-- **discord-rpc** C++ library
-- **CMake 3.21+**
-- **C++17 compatible compiler**
-
-### Supported Platforms
-
-- ✅ Windows (MSVC, MinGW)
-- ✅ Linux (GCC, Clang)
-- ✅ macOS (Clang)
-
-## Quick Start
-
-### 1. Clone and Setup
-
-```bash
-git clone <your-repo-url> DiscordRPCPlugin
-cd DiscordRPCPlugin
-```
-
-### 2. Follow Platform-Specific Guide
-
-- **Windows**: See [BUILD_GUIDE_WINDOWS.md](BUILD_GUIDE_WINDOWS.md)
-- **Linux**: See [BUILD_GUIDE_LINUX.md](BUILD_GUIDE_LINUX.md)
-- **General**: See [DISCORD_RPC_PLUGIN_GUIDE.md](DISCORD_RPC_PLUGIN_GUIDE.md)
-
-### 3. Build and Install
-
-```bash
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . -j$(nproc)
-cmake --install .  # or copy manually (see guides)
-```
-
-### 4. Restart Qt Creator
-
-The plugin will load automatically. Verify in **Help → About Plugins** and search for "DiscordRPC".
-
-## Directory Structure
 
 ```
-DiscordRPCPlugin/
-├── src/
-│   ├── discordrpcplugin.h          # Main plugin class
-│   ├── discordrpcplugin.cpp
-│   ├── discordrpcmanager.h         # Discord RPC management
-│   ├── discordrpcmanager.cpp
-│   ├── discordrpcconstants.h
-│   └── DiscordRPCPlugin.json       # Plugin metadata
-├── CMakeLists.txt                  # Build configuration
-├── DISCORD_RPC_PLUGIN_GUIDE.md     # Technical guide
-├── BUILD_GUIDE_WINDOWS.md          # Windows build instructions
-├── BUILD_GUIDE_LINUX.md            # Linux build instructions
-└── README.md                        # This file
+Editing C++ Source File
+main.cpp/MyApp
 ```
 
-## Configuration
+- **Details** — What you're doing (Editing C++ Source File)
+- **State** — File name and project (main.cpp/MyApp)
+- **Large Icon** — File type icon (cxx, python, qml, etc.)
+- **Small Icon** — Qt Creator icon with project name
+- **Timestamp** — Session duration
 
-### Discord Application Setup
+## Installation (Pre-built)
 
-1. Create an application at [Discord Developer Portal](https://discord.com/developers/applications)
-2. Copy your **Client ID**
-3. Edit `src/discordrpcmanager.h`:
+Download the latest release for your platform from [Releases](https://github.com/KorryKatti/qtcreator-plugin-discord-presence/releases).
 
-```cpp
-static constexpr const char *DISCORD_CLIENT_ID = "YOUR_CLIENT_ID_HERE";
-```
-
-4. Rebuild the plugin
-
-### Customizing Presence
-
-To change what information is displayed, edit `discordrpcmanager.cpp`:
-
-```cpp
-void DiscordRPCManager::updatePresence()
-{
-    // Modify presence.state, presence.details, etc.
-    presence.state = "Custom Status";
-    presence.details = "Custom Details";
-    Discord_UpdatePresence(&presence);
-}
-```
-
-## Troubleshooting
-
-### Plugin doesn't load
-
-1. Check plugin directory exists: `~/.local/share/QtProject/QtCreator/plugins/19.0.2/`
-2. Verify `.so`/`.dll` file is there
-3. Check Help → About Plugins for error messages
-4. Run: `qtcreator -logging.rules=qtc.extensionsystem=debug 2>&1 | grep discord`
-
-### Discord doesn't update
-
-1. Ensure Discord desktop app is running
-2. Verify Client ID is correct in source code
-3. Rebuild and reinstall the plugin
-4. Check firewall isn't blocking discord-rpc
-
-### Compilation errors
-
-1. Verify all dependencies installed (see BUILD_GUIDE for your platform)
-2. Check CMake found all required libraries
-3. Ensure discord-rpc is built and installed
-4. Verify Qt Creator development files are installed
-
-See the platform-specific build guides for detailed troubleshooting.
+1. Open Qt Creator
+2. Go to **Help** > **About Plugins**
+3. Click **Install Plugin**
+4. Select the downloaded zip file
+5. Restart Qt Creator
+6. Verify via **Help** > **About Plugins** — search for "DiscordRPC"
 
 ## Building from Source
 
-### Quick Build (Linux/macOS)
+### Prerequisites
+
+- Qt Creator 19.0.2 with development files
+- Qt 6.11.1 (or compatible Qt 6.x)
+- CMake 3.21+
+- C++20 compatible compiler (GCC 12+ / Clang 14+)
+- [discord-rpc](https://github.com/discord/discord-rpc) library
+
+### Step 1: Build discord-rpc
 
 ```bash
-# Install dependencies
-# Ubuntu: sudo apt install build-essential cmake qt6-base-dev
-# macOS: brew install cmake qt
+git clone https://github.com/discord/discord-rpc.git
+cd discord-rpc
+mkdir build && cd build
 
-# Clone and build
-git clone <repo> && cd DiscordRPCPlugin
+# Fix duplicate key in .clang-format (remove second IndentCaseLabels line)
+# Then build with -fPIC for shared library linking
+cmake .. -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+    -DCMAKE_CXX_FLAGS="-Wno-error -fpermissive"
+
+cmake --build . -j$(nproc) --target discord-rpc
+cmake --install . --prefix /path/to/discord-rpc-install
+```
+
+### Step 2: Build the Plugin
+
+```bash
+git clone https://github.com/KorryKatti/qtcreator-plugin-discord-presence.git
+cd qtcreator-plugin-discord-presence
 mkdir build && cd build
 
 cmake .. -DCMAKE_BUILD_TYPE=Release \
-    -DDISCORD_RPC_DIR=$HOME/.local/opt/discord-rpc
-cmake --build . -j$(nproc)
+    -DDISCORD_RPC_DIR=/path/to/discord-rpc-install
 
-# Install
-mkdir -p ~/.local/share/QtProject/QtCreator/plugins/19.0.2
-cp DiscordRPCPlugin.so ~/.local/share/QtProject/QtCreator/plugins/19.0.2/
+cmake --build . -j$(nproc)
 ```
 
-### Windows Build
+### Step 3: Package and Install
 
-See [BUILD_GUIDE_WINDOWS.md](BUILD_GUIDE_WINDOWS.md) for detailed steps.
+```bash
+cd plugins
+cp /path/to/DiscordRPCPlugin.json libDiscordRPCPlugin.json
+zip DiscordRPCPlugin-<platform>.zip libDiscordRPCPlugin.so libDiscordRPCPlugin.json
+```
 
-## Development
+Then install via **Help** > **About Plugins** > **Install Plugin**.
 
-### Adding Support for New File Types
+## Discord Application Setup
 
-Edit `src/discordrpcmanager.cpp`:
+The plugin uses a shared Discord Application ID (`937400240473006092`). You can use this directly — no setup needed.
+
+If you want your own application:
+
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create a new application
+3. Copy the **Client ID**
+4. Edit `discordrpcconstants.h`:
 
 ```cpp
-QString DiscordRPCManager::getFileIcon(const QString &filePath)
-{
-    static const QMap<QString, QString> iconMap{
-        {"cpp", "cpp"},      // Add your file types here
-        {"rust", "rust"},
-        {"go", "go"},
-    };
-    return iconMap.value(suffix, "file");
-}
+constexpr const char DISCORD_CLIENT_ID[] = "YOUR_CLIENT_ID_HERE";
 ```
 
-### Adding Settings/Options
+5. Rebuild and reinstall the plugin
 
-1. Create a settings dialog class
-2. Register with Qt Creator's settings system
-3. Read/write user preferences
-4. Apply settings in `discordrpcmanager.cpp`
+## Supported File Types
+
+| Category | Extensions |
+|----------|-----------|
+| C/C++ | .cpp, .hpp, .cxx, .hxx, .cc, .hh, .c, .h, .i |
+| Qt/QMake | .pro, .pri, .ui, .qrc, .qml, .qss |
+| Python | .py |
+| JavaScript/TypeScript | .js, .ts |
+| Web | .html, .css, .scss, .json, .xml |
+| Other Languages | .rb, .rs, .lua, .java, .asm, .cs |
+| Build | CMakeLists.txt, Makefile, .gitignore |
+| Text | .txt, .md |
+
+## Architecture
+
+```
+├── discordrpcplugin.h/cpp       # Plugin entry point (IPlugin)
+├── discordrpcmanager.h/cpp      # Discord RPC core logic
+├── discordrpcconstants.h        # IDs and constants
+├── DiscordRPCPlugin.json        # Plugin metadata
+└── CMakeLists.txt               # Build configuration
+```
 
 ## Contributing
 
 Contributions welcome! Areas for improvement:
 
-- [ ] Settings UI (enable/disable, custom status)
-- [ ] More file type icons
-- [ ] Activity tracking and statistics
-- [ ] Support for VS Code, Vim extensions
-- [ ] Localization
-- [ ] Dark/light theme support
+- Settings UI (enable/disable, custom status)
+- More file type icons
+- Activity tracking and statistics
+- Localization
 
 ## License
 
-MIT License — See LICENSE file for details.
+MIT
 
 ## References
 
 - [Qt Creator Plugin Development](https://doc.qt.io/qtcreator-extending/)
 - [Discord RPC Documentation](https://discord.com/developers/docs/activities/rpc)
-- [discord-rpc C++ Library](https://github.com/discordapp/discord-rpc)
-
-## Support
-
-For issues or questions:
-
-1. Check the relevant BUILD_GUIDE for your platform
-2. Review [DISCORD_RPC_PLUGIN_GUIDE.md](DISCORD_RPC_PLUGIN_GUIDE.md)
-3. Check Qt Creator plugin debug output
-4. Search existing GitHub issues
-
-## Acknowledgments
-
-Built for Qt Creator 19.0.2 with Qt 6.11.1, following best practices from:
-- Official Qt Creator plugin examples
-- Existing QtcDRP and BetterQtcDRP plugins (now updated for modern versions)
-
----
-
-**Happy coding!** 🚀 Now your Discord friends will know you're busy in Qt Creator.
+- [discord-rpc C++ Library](https://github.com/discord/discord-rpc)
+- [Cute Discord Presence](https://github.com/eduardoc7/qtcreator-plugin-discord-presence) — Original inspiration
