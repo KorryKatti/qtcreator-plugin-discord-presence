@@ -17,14 +17,15 @@ set(DISCORD_RPC_DIR "" CACHE PATH "discord-rpc install prefix")
 find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
-    discordrpcplugin.h
-    discordrpcplugin.cpp
-    discordrpcmanager.h
-    discordrpcmanager.cpp
-    discordrpcconstants.h
+    src/discordrpcplugin.h
+    src/discordrpcplugin.cpp
+    src/discordrpcmanager.h
+    src/discordrpcmanager.cpp
+    src/discordrpcconstants.h
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
+    src
     ${QTC_ROOT}/src/libs
     ${QTC_ROOT}/src/libs/extensionsystem
     ${QTC_ROOT}/src/libs/utils
