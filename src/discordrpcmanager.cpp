@@ -122,6 +122,7 @@ DiscordRPCManager::DiscordRPCManager(QObject *parent)
 
     initializeDiscord();
     setupControlMenu();
+    loadSettings();
     activate();
 }
 
@@ -130,6 +131,24 @@ DiscordRPCManager::~DiscordRPCManager()
     deactivate();
     Discord_Shutdown();
     s_instance = nullptr;
+}
+
+void DiscordRPCManager::loadSettings()
+{
+    QSettings settings;
+
+    m_idleMessage = settings.value("DiscordRPC/IdleMessage",
+                                   QStringLiteral("Not Currently Editing Anything")).toString();
+
+    m_verbOverrides.clear();
+    settings.beginGroup("DiscordRPC/VerbOverrides");
+    for (const auto &key : settings.childKeys())
+        m_verbOverrides[key] = settings.value(key).toString();
+    settings.endGroup();
+
+    qDebug() << "Discord RPC: Settings loaded"
+             << "(idle:" << m_idleMessage
+             << ", verb overrides:" << m_verbOverrides.size() << ")";
 }
 
 void DiscordRPCManager::initializeDiscord()
@@ -240,7 +259,7 @@ void DiscordRPCManager::setIdleState()
     QDiscordRichPresence presence;
     presence.LargeImageKey = "qt";
     presence.LargeImageText = "Qt Creator";
-    presence.Details = "Not Currently Editing Anything";
+    presence.Details = m_idleMessage;
     presence.StartTimestamp = m_activatedTimestamp;
     presence.update();
 }
@@ -304,6 +323,9 @@ void DiscordRPCManager::syncToEditor()
         desc = s_mimeToDescriptor.value(mime);
     else
         desc = {"unknown", "Unknown File (" + mime + ")", "Editing"};
+
+    if (m_verbOverrides.contains(mime))
+        desc.WorkingVerb = m_verbOverrides.value(mime);
 
     QDiscordRichPresence presence;
     presence.Details = desc.WorkingVerb + " " + desc.Description;

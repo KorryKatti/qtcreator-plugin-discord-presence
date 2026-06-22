@@ -5,6 +5,7 @@
 #include <QMap>
 #include <QMenu>
 #include <QElapsedTimer>
+#include <QSettings>
 
 #include <coreplugin/editormanager/editormanager.h>
 #include <coreplugin/editormanager/ieditor.h>
@@ -88,6 +89,10 @@ private:
     void syncToEditor();
     void setIdleState();
     void attemptReconnect();
+    void loadSettings();
+
+    QString m_idleMessage;
+    QMap<QString, QString> m_verbOverrides;
 
     bool m_connected = false;
     int m_reconnectAttempts = 0;
