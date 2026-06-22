@@ -7,6 +7,8 @@
 
 namespace DiscordRPC::Internal {
 
+DiscordRPCManager *DiscordRPCManager::s_instance = nullptr;
+
 // --- QDiscordRichPresence ---
 
 QDiscordRichPresence::QDiscordRichPresence()
@@ -107,6 +109,10 @@ DiscordRPCManager::DiscordRPCManager(QObject *parent)
     , m_activatedTimestamp(0)
     , m_timeOnCurrentEditor(0)
 {
+    s_instance = this;
+
+    connect(&m_reconnectTimer, &QTimer::timeout, this, &DiscordRPCManager::attemptReconnect);
+
     initializeDiscord();
     setupControlMenu();
     activate();
@@ -116,13 +122,26 @@ DiscordRPCManager::~DiscordRPCManager()
 {
     deactivate();
     Discord_Shutdown();
+    s_instance = nullptr;
 }
 
 void DiscordRPCManager::initializeDiscord()
 {
     DiscordEventHandlers handlers{};
     memset(&handlers, 0, sizeof(handlers));
+
+    handlers.disconnected = [](int errorCode, const char *message) {
+        Q_UNUSED(errorCode)
+        qDebug() << "Discord RPC: Disconnected -" << message;
+        if (s_instance) {
+            s_instance->m_connected = false;
+            s_instance->m_reconnectAttempts = 0;
+            s_instance->m_reconnectTimer.start(kBaseReconnectDelayMs);
+        }
+    };
+
     Discord_Initialize(Constants::DISCORD_CLIENT_ID, &handlers, 1, nullptr);
+    m_connected = true;
     qDebug() << "Discord RPC: Initialized";
 }
 
@@ -184,6 +203,9 @@ void DiscordRPCManager::activate()
 
 void DiscordRPCManager::deactivate()
 {
+    m_reconnectTimer.stop();
+    m_reconnectAttempts = 0;
+
     for (auto &conn : m_syncConnections)
         disconnect(conn);
     m_syncConnections.clear();
@@ -202,6 +224,44 @@ void DiscordRPCManager::setIdleState()
     presence.Details = "Not Currently Editing Anything";
     presence.StartTimestamp = m_activatedTimestamp;
     presence.update();
+}
+
+void DiscordRPCManager::attemptReconnect()
+{
+    if (m_connected || m_reconnectAttempts >= kMaxReconnectAttempts) {
+        m_reconnectTimer.stop();
+        if (m_reconnectAttempts >= kMaxReconnectAttempts)
+            qDebug() << "Discord RPC: Gave up reconnecting after" << kMaxReconnectAttempts << "attempts";
+        return;
+    }
+
+    ++m_reconnectAttempts;
+    const int delay = kBaseReconnectDelayMs * (1 << (m_reconnectAttempts - 1));
+    qDebug() << "Discord RPC: Reconnect attempt" << m_reconnectAttempts
+             << "in" << delay << "ms";
+
+    m_reconnectTimer.stop();
+
+    Discord_Shutdown();
+    DiscordEventHandlers handlers{};
+    memset(&handlers, 0, sizeof(handlers));
+    handlers.disconnected = [](int errorCode, const char *message) {
+        Q_UNUSED(errorCode)
+        qDebug() << "Discord RPC: Disconnected -" << message;
+        if (s_instance) {
+            s_instance->m_connected = false;
+            s_instance->m_reconnectAttempts = 0;
+            s_instance->m_reconnectTimer.start(kBaseReconnectDelayMs);
+        }
+    };
+
+    Discord_Initialize(Constants::DISCORD_CLIENT_ID, &handlers, 1, nullptr);
+    m_connected = true;
+
+    if (m_syncTimer.isActive())
+        syncToEditor();
+
+    m_reconnectTimer.start(delay);
 }
 
 void DiscordRPCManager::syncToEditor()

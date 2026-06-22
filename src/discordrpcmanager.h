@@ -4,6 +4,7 @@
 #include <QTimer>
 #include <QMap>
 #include <QMenu>
+#include <QElapsedTimer>
 
 #include <coreplugin/editormanager/editormanager.h>
 #include <coreplugin/editormanager/ieditor.h>
@@ -83,6 +84,14 @@ private:
     void setupControlMenu();
     void syncToEditor();
     void setIdleState();
+    void attemptReconnect();
+
+    bool m_connected = false;
+    int m_reconnectAttempts = 0;
+    static constexpr int kMaxReconnectAttempts = 5;
+    static constexpr int kBaseReconnectDelayMs = 1000;
+    QTimer m_reconnectTimer;
+    static DiscordRPCManager *s_instance;
 };
 
 } // namespace DiscordRPC::Internal
