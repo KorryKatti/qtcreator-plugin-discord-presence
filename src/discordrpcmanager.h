@@ -90,6 +90,7 @@ private:
     void setIdleState();
     void attemptReconnect();
     void loadSettings();
+    static QString vcsProjectName(const Utils::FilePath &filePath);
 
     QString m_idleMessage;
     QMap<QString, QString> m_verbOverrides;

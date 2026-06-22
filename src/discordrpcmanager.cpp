@@ -4,6 +4,9 @@
 #include <QDateTime>
 #include <QFileInfo>
 #include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QRegularExpression>
 
 namespace DiscordRPC::Internal {
 
@@ -149,6 +152,27 @@ void DiscordRPCManager::loadSettings()
     qDebug() << "Discord RPC: Settings loaded"
              << "(idle:" << m_idleMessage
              << ", verb overrides:" << m_verbOverrides.size() << ")";
+}
+
+QString DiscordRPCManager::vcsProjectName(const Utils::FilePath &filePath)
+{
+    QDir dir = filePath.toFileInfo().absoluteDir();
+
+    while (dir.exists() && dir.path() != "/") {
+        if (QDir(dir.path() + "/.git").exists()) {
+            QFile configFile(dir.path() + "/.git/config");
+            if (configFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                const QByteArray content = configFile.readAll();
+                const QRegularExpression re(R"(url\s*=\s*(?:https?://[^/]+/|git@[^:]+:)(.+?)(?:\.git)?$)");
+                const QRegularExpressionMatch match = re.match(content);
+                if (match.hasMatch())
+                    return match.captured(1);
+            }
+            return dir.dirName();
+        }
+        dir.cdUp();
+    }
+    return {};
 }
 
 void DiscordRPCManager::initializeDiscord()
@@ -310,10 +334,15 @@ void DiscordRPCManager::syncToEditor()
         return;
     }
 
-    auto *activeProject = ProjectExplorer::ProjectTree::currentProject();
-    const QString projectName = activeProject ? activeProject->displayName() : "No Project";
-
     const Utils::FilePath filePath = editor->document()->filePath();
+
+    auto *activeProject = ProjectExplorer::ProjectTree::currentProject();
+    QString projectName = activeProject ? activeProject->displayName() : QString();
+    if (projectName.isEmpty())
+        projectName = vcsProjectName(filePath);
+    if (projectName.isEmpty())
+        projectName = "No Project";
+
     const QString fileName = filePath.fileName();
     const QString rawMime = editor->document()->mimeType();
     const QString mime = overrideMime(rawMime, filePath);
