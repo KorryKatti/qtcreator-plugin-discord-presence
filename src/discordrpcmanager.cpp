@@ -112,6 +112,13 @@ DiscordRPCManager::DiscordRPCManager(QObject *parent)
     s_instance = this;
 
     connect(&m_reconnectTimer, &QTimer::timeout, this, &DiscordRPCManager::attemptReconnect);
+    connect(&m_idleTimer, &QTimer::timeout, this, [this]() {
+        if (!m_idle) {
+            m_idle = true;
+            setIdleState();
+            qDebug() << "Discord RPC: Idle";
+        }
+    });
 
     initializeDiscord();
     setupControlMenu();
@@ -174,6 +181,7 @@ void DiscordRPCManager::setupControlMenu()
 void DiscordRPCManager::activate()
 {
     deactivate();
+    m_idle = false;
     setIdleState();
 
     m_syncConnections = {
@@ -181,21 +189,30 @@ void DiscordRPCManager::activate()
                 &Core::EditorManager::currentEditorChanged,
                 this, [this](Core::IEditor *) {
                     m_timeOnCurrentEditor = 0;
+                    m_idle = false;
+                    m_idleTimer.start(kIdleTimeoutMs);
                     syncToEditor();
                 }),
 
         connect(ProjectExplorer::ProjectTree::instance(),
                 &ProjectExplorer::ProjectTree::currentProjectChanged,
                 this, [this](ProjectExplorer::Project *) {
+                    m_idle = false;
+                    m_idleTimer.start(kIdleTimeoutMs);
                     syncToEditor();
                 }),
 
         connect(Core::EditorManager::instance(),
                 &Core::EditorManager::currentDocumentStateChanged,
-                this, [this]() { syncToEditor(); }),
+                this, [this]() {
+                    m_idle = false;
+                    m_idleTimer.start(kIdleTimeoutMs);
+                    syncToEditor();
+                }),
     };
 
     m_syncTimer.start(1000);
+    m_idleTimer.start(kIdleTimeoutMs);
     m_activatedTimestamp = std::time(nullptr);
 
     qDebug() << "Discord RPC: Activated";
@@ -205,6 +222,8 @@ void DiscordRPCManager::deactivate()
 {
     m_reconnectTimer.stop();
     m_reconnectAttempts = 0;
+    m_idleTimer.stop();
+    m_idle = false;
 
     for (auto &conn : m_syncConnections)
         disconnect(conn);

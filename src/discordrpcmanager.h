@@ -79,6 +79,9 @@ private:
     std::time_t m_timeOnCurrentEditor;
     QTimer m_syncTimer;
     QList<QMetaObject::Connection> m_syncConnections;
+    QTimer m_idleTimer;
+    bool m_idle = false;
+    static constexpr int kIdleTimeoutMs = 300000; // 5 minutes
 
     void initializeDiscord();
     void setupControlMenu();
