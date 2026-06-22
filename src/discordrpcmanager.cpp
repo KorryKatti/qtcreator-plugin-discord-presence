@@ -98,7 +98,7 @@ QString DiscordRPCManager::overrideMime(const QString &mime, const Utils::FilePa
 
     for (const auto &o : s_mimeOverrideMap.value(mime)) {
         for (const QString &ext : o.Extensions) {
-            if (filePath.endsWith(ext))
+            if (filePath.toString().endsWith(ext))
                 return o.TargetMime;
         }
     }
