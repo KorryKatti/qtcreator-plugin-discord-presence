@@ -4,7 +4,6 @@
 #include <QTimer>
 #include <QMap>
 #include <QMenu>
-#include <QElapsedTimer>
 #include <QSettings>
 
 #include <coreplugin/editormanager/editormanager.h>
@@ -77,8 +76,6 @@ private:
     static QString overrideMime(const QString &mime, const Utils::FilePath &filePath);
 
     std::time_t m_activatedTimestamp;
-    std::time_t m_timeOnCurrentEditor;
-    QTimer m_syncTimer;
     QList<QMetaObject::Connection> m_syncConnections;
     QTimer m_idleTimer;
     bool m_idle = false;

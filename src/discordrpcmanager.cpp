@@ -110,7 +110,6 @@ QString DiscordRPCManager::overrideMime(const QString &mime, const Utils::FilePa
 DiscordRPCManager::DiscordRPCManager(QObject *parent)
     : QObject(parent)
     , m_activatedTimestamp(0)
-    , m_timeOnCurrentEditor(0)
 {
     s_instance = this;
 
@@ -231,7 +230,6 @@ void DiscordRPCManager::activate()
         connect(Core::EditorManager::instance(),
                 &Core::EditorManager::currentEditorChanged,
                 this, [this](Core::IEditor *) {
-                    m_timeOnCurrentEditor = 0;
                     m_idle = false;
                     m_idleTimer.start(kIdleTimeoutMs);
                     syncToEditor();
@@ -254,7 +252,6 @@ void DiscordRPCManager::activate()
                 }),
     };
 
-    m_syncTimer.start(1000);
     m_idleTimer.start(kIdleTimeoutMs);
     m_activatedTimestamp = std::time(nullptr);
 
@@ -272,7 +269,6 @@ void DiscordRPCManager::deactivate()
         disconnect(conn);
     m_syncConnections.clear();
 
-    m_syncTimer.stop();
     Discord_ClearPresence();
 
     qDebug() << "Discord RPC: Deactivated";
@@ -320,8 +316,7 @@ void DiscordRPCManager::attemptReconnect()
     Discord_Initialize(Constants::DISCORD_CLIENT_ID, &handlers, 1, nullptr);
     m_connected = true;
 
-    if (m_syncTimer.isActive())
-        syncToEditor();
+    syncToEditor();
 
     m_reconnectTimer.start(delay);
 }
@@ -356,15 +351,9 @@ void DiscordRPCManager::syncToEditor()
     if (m_verbOverrides.contains(mime))
         desc.WorkingVerb = m_verbOverrides.value(mime);
 
-    const int minutes = m_timeOnCurrentEditor / 60;
-    const int seconds = m_timeOnCurrentEditor % 60;
-    const QString elapsed = QString("%1:%2")
-        .arg(minutes)
-        .arg(seconds, 2, 10, QChar('0'));
-
     QDiscordRichPresence presence;
     presence.Details = desc.WorkingVerb + " " + desc.Description;
-    presence.State = fileName + "/" + projectName + " | " + elapsed;
+    presence.State = fileName + "/" + projectName;
     presence.LargeImageKey = desc.ImageKey;
     presence.LargeImageText = desc.WorkingVerb + " " + fileName
                               + " (" + mime + ")";
@@ -372,8 +361,6 @@ void DiscordRPCManager::syncToEditor()
     presence.SmallImageText = projectName;
     presence.StartTimestamp = m_activatedTimestamp;
     presence.update();
-
-    ++m_timeOnCurrentEditor;
 }
 
 } // namespace DiscordRPC::Internal
